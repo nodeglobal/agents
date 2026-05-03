@@ -1,0 +1,18 @@
+define user ask task
+  "I want to run a task"
+  "Execute this task"
+  "Build this feature"
+
+define flow check task safety
+  user ask task
+  $is_safe = execute check_task_safety
+  if not $is_safe
+    bot refuse to execute unsafe task
+    stop
+
+define flow check output safety
+  bot respond
+  $is_safe = execute check_output_safety
+  if not $is_safe
+    bot refuse to output unsafe content
+    stop

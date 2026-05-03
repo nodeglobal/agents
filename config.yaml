@@ -1,0 +1,52 @@
+## DeltaNode Agents Configuration
+## Copy this to config.yaml and customize for your setup
+
+# Projects — add your own projects here
+# Each project maps to a directory under WORKSPACE_PATH
+projects:
+  - name: my-project
+    mcps:
+      - filesystem
+      - github
+
+# Agent settings
+agents:
+  max_iterations: 3
+  validation_threshold: 75
+
+  # Complexity-based timeouts (seconds)
+  timeouts:
+    Simple: 600
+    Medium: 1800
+    Complex: 3600
+
+  # Developer agent polling interval (seconds)
+  poll_interval: 10
+
+# Execution settings
+execution:
+  # Where your project repos live
+  workspace_path: ~/deltanode-workspace
+  max_parallel_sessions: 3
+  session_timeout_minutes: 30
+
+# Notifications — Discord is optional
+# Leave discord.enabled as false to use web dashboard only
+notifications:
+  discord:
+    enabled: false
+    # Set these in .env if you want Discord notifications
+    # DISCORD_BOT_TOKEN=your-token
+    # DISCORD_CHANNEL_ID=your-channel-id
+
+# Scheduled jobs (UTC times)
+schedule:
+  daily_summary_hour: 6
+  daily_summary_minute: 0
+  update_agent: "sun 09:00"
+  self_improve_agent: "wed 10:00"
+
+# Server
+server:
+  port: 8000
+  host: "0.0.0.0"

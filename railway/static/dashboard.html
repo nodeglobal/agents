@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeltaNode Agents</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0c0c14;--surface:#13131f;--border:#1e1e2e;--purple:#a855f7;--purple-dim:#7c3aed;--text:#ededf0;--muted:#8888a0;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--blue:#3b82f6}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:1.5rem}
+code,.mono{font-family:'JetBrains Mono',monospace;font-size:0.85em}
+h1{font-size:1.4rem;font-weight:600;margin-bottom:0.25rem}
+.header{display:flex;align-items:center;gap:0.75rem;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.header .dot{width:10px;height:10px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.subtitle{color:var(--muted);font-size:0.85rem}
+.grid{display:grid;grid-template-columns:1fr 2fr;gap:1.5rem}
+@media(max-width:768px){.grid{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.25rem}
+.card h2{font-size:0.9rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);margin-bottom:1rem}
+label{display:block;font-size:0.8rem;color:var(--muted);margin-bottom:0.35rem;margin-top:0.75rem}
+textarea,select,input[type="text"]{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:0.6rem 0.75rem;color:var(--text);font-size:0.9rem;resize:vertical}
+textarea:focus,select:focus,input:focus{outline:none;border-color:var(--purple)}
+textarea{min-height:80px}
+.btn{display:inline-flex;align-items:center;gap:0.4rem;padding:0.55rem 1rem;border:none;border-radius:6px;font-size:0.85rem;font-weight:500;cursor:pointer;transition:opacity 0.15s}
+.btn:hover{opacity:0.85}
+.btn-primary{background:var(--purple);color:#fff}
+.btn-approve{background:var(--green);color:#fff}
+.btn-reject{background:var(--red);color:#fff}
+.btn-sm{padding:0.35rem 0.7rem;font-size:0.78rem}
+.task-list{display:flex;flex-direction:column;gap:0.75rem;max-height:70vh;overflow-y:auto}
+.task-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1rem;transition:border-color 0.2s}
+.task-item:hover{border-color:var(--purple-dim)}
+.task-item .row{display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap}
+.task-item .desc{font-size:0.9rem;margin-bottom:0.5rem}
+.badge{display:inline-block;padding:0.2rem 0.55rem;border-radius:4px;font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.03em}
+.badge-spec_running{background:#7c3aed33;color:var(--purple)}
+.badge-awaiting_approval{background:#eab30833;color:var(--yellow)}
+.badge-pipeline_running{background:#3b82f633;color:var(--blue)}
+.badge-approved{background:#22c55e33;color:var(--green)}
+.badge-blocked,.badge-error{background:#ef444433;color:var(--red)}
+.spec-brief{background:var(--surface);border-left:3px solid var(--purple);padding:0.6rem 0.8rem;margin:0.6rem 0;font-size:0.82rem;color:var(--muted);border-radius:0 4px 4px 0}
+.results{display:flex;gap:1rem;margin-top:0.5rem;flex-wrap:wrap}
+.results .stat{font-size:0.78rem;color:var(--muted)}
+.results .stat span{color:var(--text);font-weight:500}
+.actions{display:flex;gap:0.5rem;margin-top:0.6rem}
+.empty{text-align:center;padding:2rem;color:var(--muted);font-size:0.9rem}
+#toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.75rem 1.1rem;font-size:0.85rem;opacity:0;transition:opacity 0.3s;pointer-events:none}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="dot"></div>
+  <div><h1>DeltaNode Agents</h1><p class="subtitle">Autonomous development pipeline</p></div>
+</div>
+<div class="grid">
+  <div class="card">
+    <h2>New Task</h2>
+    <form id="taskForm">
+      <label for="project">Project</label>
+      <select id="project">
+        <option value="reclaim">RECLAIM</option>
+        <option value="revenue-guardian">Revenue Guardian</option>
+        <option value="deltanode-agents">DeltaNode Agents</option>
+      </select>
+      <label for="desc">Description</label>
+      <textarea id="desc" placeholder="Describe what you want built or fixed..."></textarea>
+      <div style="margin-top:1rem">
+        <button type="submit" class="btn btn-primary">Submit Task</button>
+      </div>
+    </form>
+  </div>
+  <div class="card">
+    <h2>Active Tasks</h2>
+    <div id="taskList" class="task-list">
+      <div class="empty">No tasks yet. Submit one to get started.</div>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+const API = window.location.origin;
+let tasks = [];
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+function badge(status) {
+  return `<span class="badge badge-${status}">${status.replace('_', ' ')}</span>`;
+}
+
+function renderTasks() {
+  const el = document.getElementById('taskList');
+  if (!tasks.length) { el.innerHTML = '<div class="empty">No tasks yet. Submit one to get started.</div>'; return; }
+  el.innerHTML = tasks.map(t => {
+    let extra = '';
+    if (t.status === 'awaiting_approval' && t.spec_brief) {
+      extra = `<div class="spec-brief mono">${esc(t.spec_brief)}</div>
+        <div class="actions">
+          <button class="btn btn-approve btn-sm" onclick="approve('${t.thread_id}')">Approve</button>
+          <button class="btn btn-reject btn-sm" onclick="reject('${t.thread_id}')">Reject</button>
+        </div>`;
+    }
+    if (t.status === 'approved' && t.results) {
+      extra = `<div class="results">
+        ${t.results.score != null ? `<div class="stat">Score: <span>${t.results.score}/100</span></div>` : ''}
+        ${t.results.files_changed != null ? `<div class="stat">Files: <span>${t.results.files_changed}</span></div>` : ''}
+        ${t.results.tests_passed != null ? `<div class="stat">Tests: <span class="mono">${t.results.tests_passed}/${t.results.tests_total}</span></div>` : ''}
+      </div>`;
+    }
+    return `<div class="task-item">
+      <div class="desc">${esc(t.description || t.task || '')}</div>
+      <div class="row">${badge(t.status)}<span class="mono" style="font-size:0.72rem;color:var(--muted)">${t.thread_id ? t.thread_id.slice(0,8) : ''}</span></div>
+      ${extra}
+    </div>`;
+  }).join('');
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+async function fetchTasks() {
+  try {
+    const r = await fetch(API + '/tasks');
+    if (r.ok) { tasks = await r.json(); renderTasks(); }
+  } catch(e) { /* silent retry */ }
+}
+
+document.getElementById('taskForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const desc = document.getElementById('desc').value.trim();
+  const project = document.getElementById('project').value;
+  if (!desc) return;
+  try {
+    const r = await fetch(API + '/task', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({task: desc, project: project})
+    });
+    if (r.ok) { toast('Task submitted'); document.getElementById('desc').value = ''; fetchTasks(); }
+    else { toast('Error: ' + r.status); }
+  } catch(e) { toast('Network error'); }
+});
+
+async function approve(id) {
+  try {
+    const r = await fetch(API + '/approve/' + id, {method:'POST'});
+    if (r.ok) { toast('Approved'); fetchTasks(); } else { toast('Error: ' + r.status); }
+  } catch(e) { toast('Network error'); }
+}
+
+async function reject(id) {
+  try {
+    const r = await fetch(API + '/reject/' + id, {method:'POST'});
+    if (r.ok) { toast('Rejected'); fetchTasks(); } else { toast('Error: ' + r.status); }
+  } catch(e) { toast('Network error'); }
+}
+
+fetchTasks();
+setInterval(fetchTasks, 5000);
+</script>
+</body>
+</html>

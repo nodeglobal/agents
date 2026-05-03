@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "deltanode-agents": {
+      "command": "bash",
+      "args": ["./mcp-serve.sh"],
+      "env": {
+        "AGENT_BASE_URL": "http://localhost:8000"
+      }
+    }
+  }
+}
