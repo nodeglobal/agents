@@ -9,7 +9,7 @@ NC='\033[0m'
 
 echo ""
 echo -e "${CYAN}╔══════════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║${NC}     DeltaNode Agents — One-Click Install     ${CYAN}║${NC}"
+echo -e "${CYAN}║${NC}   DeltaNode Dev Agents — One-Click Install   ${CYAN}║${NC}"
 echo -e "${CYAN}║${NC}     Autonomous AI Agent Workflow System      ${CYAN}║${NC}"
 echo -e "${CYAN}╚══════════════════════════════════════════════╝${NC}"
 echo ""

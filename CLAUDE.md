@@ -1,4 +1,4 @@
-# DeltaNode Agents — Claude Code Execution Instructions
+# DeltaNode Dev Agents — Claude Code Execution Instructions
 
 ## Task Execution
 

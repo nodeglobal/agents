@@ -1,4 +1,4 @@
-# DeltaNode Agents
+# DeltaNode Dev Agents
 
 Autonomous AI agent workflow system powered by Claude Code. Submit a task in plain English, get production-ready code back — reviewed, tested, and on a feature branch.
 

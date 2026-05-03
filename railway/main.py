@@ -33,11 +33,11 @@ async def lifespan(app: FastAPI):
     summary_minute = int(os.getenv('DAILY_SUMMARY_MINUTE', 0))
     scheduler.add_job(send_daily_summary, 'cron', hour=summary_hour, minute=summary_minute)
     scheduler.start()
-    logger.info('DeltaNode Agents v5.0.0 started — Dashboard at http://localhost:%s', os.getenv('PORT', 8000))
+    logger.info('DeltaNode Dev Agents v5.0.0 started — Dashboard at http://localhost:%s', os.getenv('PORT', 8000))
     yield
     scheduler.shutdown()
 
-app = FastAPI(title='DeltaNode Agents', version='5.0.0', lifespan=lifespan)
+app = FastAPI(title='DeltaNode Dev Agents', version='5.0.0', lifespan=lifespan)
 
 static_dir = Path(__file__).parent / 'static'
 if static_dir.exists():
